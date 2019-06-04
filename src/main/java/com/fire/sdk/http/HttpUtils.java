@@ -4,16 +4,8 @@ import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
 
-import org.apache.http.ConnectionReuseStrategy;
-import org.apache.http.Header;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.HttpException;
-import org.apache.http.HttpHeaders;
-import org.apache.http.HttpRequest;
-import org.apache.http.HttpRequestInterceptor;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpResponseInterceptor;
-import org.apache.http.HttpStatus;
+import com.google.gson.GsonBuilder;
+import org.apache.http.*;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -57,8 +49,12 @@ public class HttpUtils {
      */
     public static CloseableHttpClient getDefaultClient(HttpConfiguration httpConfiguration) {
 
-        RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(httpConfiguration.getTimeout())
-                .setSocketTimeout(httpConfiguration.getTimeout()).build();
+        RequestConfig.Builder requestConfigBuilder = RequestConfig.custom().setConnectTimeout(httpConfiguration.getTimeout()).setRedirectsEnabled(false).setRelativeRedirectsAllowed(false)
+                .setSocketTimeout(httpConfiguration.getTimeout());
+
+        if (httpConfiguration.getProxy() != null) {
+            requestConfigBuilder.setProxy(new HttpHost(httpConfiguration.getProxy().getHost(), httpConfiguration.getProxy().getPort()));
+        }
 
         HttpClientConnectionManager connectionManager = new BasicHttpClientConnectionManager();
         ConnectionReuseStrategy connectionResuseStrategy = new NoConnectionReuseStrategy();
@@ -67,12 +63,11 @@ public class HttpUtils {
         CloseableHttpClient httpClient = HttpClients.custom()
                         .addInterceptorLast(createHttpRequestInterceptor())
                         .addInterceptorLast(createHttpResponseInterceptor())
-                        .setDefaultRequestConfig(requestConfig)
+                        .setDefaultRequestConfig(requestConfigBuilder.build())
                         .setConnectionManager(connectionManager)
                 .setConnectionReuseStrategy(connectionResuseStrategy).build();
         return httpClient;
     }
-
 
     private static HttpRequestInterceptor createHttpRequestInterceptor() {
         return new HttpRequestInterceptor() {
@@ -147,7 +142,7 @@ public class HttpUtils {
      * @return the response to the call. 
      */
     public static <T, U extends Response<U>> U sendPostMessage(Request<T, U> request, String accessToken, HttpClient httpClient, HttpConfiguration httpConfiguration) {
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
         HttpPost httpPost = new HttpPost(httpConfiguration.getEndpoint() + "/" + request.getEndpoint());
         httpPost.addHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         
@@ -273,7 +268,7 @@ public class HttpUtils {
      * @return the response to the call. 
      */
     public static <T, U extends Response<U>> U sendGetMessage(Request<T, U> request, String accessToken, HttpClient httpClient, HttpConfiguration httpConfiguration) {
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").create();
         HttpGet httpGet = new HttpGet(httpConfiguration.getEndpoint() + "/" + request.getEndpoint());
         httpGet.addHeader(HttpHeaders.CONTENT_TYPE, ContentType.APPLICATION_JSON.getMimeType());
         

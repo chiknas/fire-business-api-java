@@ -25,6 +25,8 @@ public class HttpConfiguration {
 	/** Whether only HTTPS is allowed for the endpoint. */
 	private boolean onlyAllowHttps = true;
 
+	private Proxy proxy;
+
 	/* Constructors/Getters/Setters */
 
 	/**
@@ -73,6 +75,10 @@ public class HttpConfiguration {
 		this.timeout = timeout;
 	}
 
+	public Proxy getProxy() {return proxy; }
+
+	public void setProxy(Proxy proxy) { this.proxy = proxy; }
+
 	/**
 	 * Check is HTTPS the only allowed scheme (protocol) to the endpoint.
 	 * @return the onlyAllowHttps
@@ -89,5 +95,4 @@ public class HttpConfiguration {
 	public void setOnlyAllowHttps(boolean onlyAllowHttps) {
 		this.onlyAllowHttps = onlyAllowHttps;
 	}
-
 }
